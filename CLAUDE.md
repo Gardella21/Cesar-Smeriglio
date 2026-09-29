@@ -9,6 +9,45 @@ Está dividido en dos partes:
 
 Si algo choca entre las dos: en lo **visual** gana la Parte B; en **repositorio, despliegue y forma de trabajo** gana la Parte A.
 
+## Estado actual del proyecto (leer primero; actualizado el 2026-09-29)
+
+**Esta sección refleja lo que hoy está construido y publicado. Donde difiera de la Parte B, gana esta sección** (las decisiones de abajo las pidió el usuario después del diseño original).
+
+### Publicación y flujo de trabajo
+- **Producción:** https://cesar-smeriglio.vercel.app/ (Vercel conectado al repo; `main` = producción). Sigue en modo demo: `noindex` presente y la URL es pública (sin protección de despliegues; solo el usuario puede cambiarlo en Vercel).
+- **Repo:** https://github.com/Gardella21/Cesar-Smeriglio.git. El `git init` está dentro de esta carpeta (antes git apuntaba al repo de la carpeta de usuario). Rama de trabajo local: `feat/efectos-scroll`. Los PR #1 a #4 ya están fusionados. Último commit publicado: `2048b50`.
+- **Flujo acordado (pisa la regla vieja de A2/A3):** no commitear ni pushear hasta que el usuario lo pida ("commitea y pushea"). Mientras tanto, mostrar los cambios en localhost y esperar su OK. Cuando lo pide, el push va **directo a `main`, sin pull request**: `git push origin feat/efectos-scroll:main` (y también `git push origin feat/efectos-scroll`). Mensajes de commit en español, formato `tipo: descripción`.
+- **Permisos:** el usuario creó `.claude/settings.local.json` (ignorado por git) con permisos para `git add`, `git commit`, `git push origin feat/*` y `gh pr create`. `gh` está autenticado como Gardella21. El push a `main` puede pedir confirmación aunque el usuario lo haya ordenado.
+- **Servidor local:** no hay uno en el repo. Se usó un servidor mínimo de Node fuera del repo (puerto 5173, sin caché). En una sesión nueva hay que levantar otro (por ejemplo un script de Node en la carpeta temporal) y pasarle el enlace al usuario. Python no está instalado. Playwright también se instaló fuera del repo (en la carpeta temporal de la sesión); si falta, reinstalarlo ahí, nunca dentro del proyecto.
+- **Idioma:** responder en español rioplatense (voseo).
+
+### Archivos del repo
+`index.html`, `styles.css`, `script.js`, `.gitignore`, `CLAUDE.md`, `img/` (`cesar.webp`, `hero.webp`, `hero-movil.webp`) y `disenio/` (PNG de referencia del canvas más `foto1.png`). Ojo: la carpeta se llama `disenio`, no `diseno`, y los PNG tienen otros nombres que los de la Parte B.
+
+### Qué se construyó (cambios respecto de la Parte B)
+- **Hero con foto:** fondo con la foto de una charla de César en la FCE-UBA, recortada por debajo del cartel institucional (sin logos de la UBA). Versión horizontal en escritorio y vertical en celular, con degradé petróleo para legibilidad. El **header es transparente** mientras se está arriba (clase `is-top`, en escritorio y celular) y se vuelve `--primary` sólido al scrollear más de 24 px o al abrir el menú móvil. Las **líneas del motivo** del hero quedaron ocultas en todos los tamaños (el SVG sigue en el HTML por si se quiere volver); el motivo se conserva en los paneles del problema, la línea de tiempo y el logo.
+- **Sobre César:** retrato 4:5 real (`cesar.webp`), tomado del original de su Wix (1024×1024, trae una marca de Gemini que el recorte deja afuera). **El usuario confirmó que es foto de César.** Además: frase "Un Coach Ontológico no te dice qué hacer…" (textual de su web), bloques **Trayectoria** (Google, TCS, Wipro, Santander) y **Formación** (seis ítems), y un **carrusel** con solo los nombres de las organizaciones (Google, TCS, Wipro, Santander, BHP Billiton, Banco Galicia, Cargill, McDonald's), sin título. Se sacó el banner de la charla que estaba debajo.
+- **Datos de César tomados de su Wix** (`cesarsmeriglio.wixsite.com/misitio`, con una herramienta que resume): **hay que validarlos con él**. Discrepancia: la portada dice Coach Ontológico ICF (UBA) y su CV lo lista con Axon Training (2022–2023); se puso como el CV. Se omitieron a propósito la estadística "99% de KPIs cumplidos", dos etapas con empresa sin nombre y los logos de las empresas.
+- **URLs reales usadas:** Calendly `https://calendly.com/csmeriglio`, LinkedIn `https://www.linkedin.com/in/csmeriglio`, Instagram `https://www.instagram.com/cesar.smeriglio/`. YouTube queda en `href="#"` con `data-pendiente="url-youtube"` (su web solo enlaza un video suelto, no un canal).
+- **Efectos (referencia de gusto: template de Framer https://ledgerhouse-wbs.framer.website/):** aparición de textos con fundido y subida de 20 px en 1 s con curva `ease`, escalonada 0,12 s entre hermanos; los textos del hero animan al cargar con CSS; barra de progreso ámbar y sombra en el header; zoom suave de la foto del hero; líneas que se dibujan (paneles del problema, línea de tiempo); tarjetas que se elevan al hover.
+- **Scroll:** con mouse hay inercia (más lento que el nativo: `WHEEL_FACTOR` 0,55 y `EASE` 0,075 en `script.js`) y un "asentado" que, al soltar, deja el contenido de cada sección centrado entre el header y el borde inferior. Va hacia la próxima sección en el sentido del scroll. Las secciones altas se dividen en bloques (`UNITS`: `.bloque` en Servicios; `.sobre__grid`, `.trayectoria` y `.sobre__cierre` en Sobre César). Teclado y barra de scroll siguen nativos. En táctil solo se aplica el asentado.
+- **Movimiento reducido:** el CSS y el JS de efectos dependen de la clase `js` en `<html>`, que un script del `<head>` agrega solo si NO hay `prefers-reduced-motion`. Con movimiento reducido todo queda estático y completo. El header (`is-top`) funciona igual en ambos casos.
+- **Carrusel:** se pausa al hover; con movimiento reducido queda quieto y centrado en varias líneas. Para usar logos oficiales hace falta autorización de César: reemplazar cada `<span class="wordmark">` por un SVG o `<img>` con `alt`.
+
+### Pendientes (lista vigente)
+- Testimonios reales y autorizados (hoy 3 placeholders; al entregar, ocultar la sección con `hidden` en la sección y en sus enlaces `data-seccion="testimonios"`).
+- Logos oficiales de ICF y certificaciones, y de las empresas (piden autorización).
+- URL del canal de YouTube; confirmar qué redes usa.
+- Política de privacidad, imagen Open Graph (`data-pendiente="og-image"`), duraciones y precios si quiere mostrarlos.
+- Validar con César trayectoria, formación y textos de las tarjetas; consultar si quiere mostrar en el hero la referencia a la FCE-UBA.
+- Protección de despliegues de la demo en Vercel (decisión del usuario).
+- Al entregar: quitar el `noindex`, conectar dominio propio y transferir cuentas de Vercel y GitHub.
+
+### Cómo verificar antes de reportar
+Capturas headless a 1280 y 375 (fuera del repo), sin errores de consola ni scroll horizontal, `grep -rn "pendiente"` para los placeholders, prueba con y sin `prefers-reduced-motion`. No se probó todavía en un celular real ni con touchpad: ahí puede hacer falta ajustar la inercia y el asentado.
+
+---
+
 ## A1. Rol y objetivo
 
 Sos un desarrollador front-end senior y diseñador orientado a conversión. Construís una landing de una sola página para un profesional del coaching.
