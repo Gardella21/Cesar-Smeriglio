@@ -356,10 +356,8 @@ section[id] { scroll-margin-top: var(--header-h); }
 
 /* --- Franja de trayectoria (carrusel) --- */
 .logos { margin-top: 64px; overflow: hidden; }
-.logos__label { text-align: center; color: var(--slate); }
 .marquee {
   display: flex;
-  margin-top: 24px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
@@ -559,13 +557,8 @@ section[id] { scroll-margin-top: var(--header-h); }
 .edu-list li { display: flex; flex-direction: column; gap: 2px; padding-block: 16px; border-top: 1px solid var(--hairline); }
 .edu-list li:first-child { border-top: 0; padding-top: 0; }
 .edu-list strong { font-weight: 600; font-size: 17px; line-height: 24px; color: var(--ink); }
-.charla { margin-top: 48px; }
-.charla { overflow: hidden; border-radius: 6px; }
-.charla img { width: 100%; height: auto; aspect-ratio: 1220 / 306; object-fit: cover; }
-@media (max-width: 899px) { .charla img { aspect-ratio: 2 / 1; object-position: 75% center; } }
 @media (min-width: 900px) {
   .trayectoria { grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 96px; padding-top: 80px; }
-  .charla { margin-top: 80px; }
 }
 .badges { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .badge {
@@ -697,19 +690,58 @@ section[id] { scroll-margin-top: var(--header-h); }
   transform-origin: left;
   pointer-events: none;
 }
-.site-header { transition: box-shadow .2s ease-out; }
+.site-header { transition: box-shadow .2s ease-out, background-color .25s ease-out, border-color .25s ease-out; }
 .site-header.is-scrolled { box-shadow: 0 8px 24px rgba(11, 31, 38, .28); }
 
-/* Brillo ámbar tras el motivo del hero (derivado del acento por opacidad) */
+/* Hero con foto: el header queda transparente sobre la foto y se vuelve sólido al scrollear
+   (o al abrir el menú móvil) */
+.site-header.is-top:not(:has(#menu:not([hidden]))) { background: transparent; border-bottom-color: transparent; }
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: calc(var(--header-h) * -1);
+  padding-top: calc(var(--header-h) + 48px);
+}
+.hero__bg { position: absolute; inset: 0; z-index: -1; }
+.hero__bg img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; }
+.hero__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(14, 59, 74, .72) 0%, rgba(14, 59, 74, .82) 40%, rgba(14, 59, 74, .95) 100%);
+}
+.hero__visual--mobile { display: none; }
 @media (min-width: 900px) {
-  .hero { background: radial-gradient(520px 420px at 80% 48%, rgba(245, 165, 36, .12), transparent 70%), var(--primary); }
+  .hero { padding-top: calc(var(--header-h) + 64px); min-height: 760px; }
+  .hero__bg img { object-position: 60% 30%; }
+  .hero__bg::after {
+    background:
+      linear-gradient(180deg, rgba(14, 59, 74, .6) 0, rgba(14, 59, 74, 0) 26%),
+      linear-gradient(90deg, rgba(14, 59, 74, .94) 0%, rgba(14, 59, 74, .82) 42%, rgba(14, 59, 74, .3) 100%);
+  }
+  .hero__grid { grid-template-columns: 640px; }
+  .hero__visual--desktop { display: none; }
 }
 
-/* Aparición al entrar en pantalla */
+/* Textos del hero: aparecen al cargar con el efecto del template, sin esperar al JS */
+.js .hero__text > *, .js .trust { animation: rise 1s ease both; }
+.js .hero__text > :nth-child(1) { animation-delay: .15s; }
+.js .hero__text > :nth-child(2) { animation-delay: .27s; }
+.js .hero__text > :nth-child(3) { animation-delay: .39s; }
+.js .trust { animation-delay: .51s; }
+@keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+/* Leve acercamiento de la foto al cargar */
+.js .hero__bg img { animation: hero-zoom 2.4s cubic-bezier(.25, .1, .25, 1) both; }
+@keyframes hero-zoom { from { transform: scale(1.08); } to { transform: none; } }
+
+/* Aparición al entrar en pantalla: mismo efecto que el template de referencia
+   (fundido + subida de 20 px, 1 s con curva ease, escalonado entre hermanos) */
 .js .reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity .7s ease-out, transform .7s ease-out;
+  transform: translateY(20px);
+  transition: opacity 1s ease, transform 1s ease;
   transition-delay: var(--d, 0s);
 }
 .js .reveal.in { opacity: 1; transform: none; }
@@ -764,9 +796,6 @@ section[id] { scroll-margin-top: var(--header-h); }
 .js .timeline.in .steps::before { transform: scaleY(1); }
 .js .step::before { transform: scale(.4); opacity: 0; transition: transform .4s ease-out, opacity .4s ease-out; }
 .js .timeline.in .step::before { transform: none; opacity: 1; }
-
-/* Parallax suave del banner */
-.js .charla img { transform: translate3d(0, var(--py, 0px), 0) scale(1.14); will-change: transform; }
 
 /* ==========================================================
    5. Movimiento reducido

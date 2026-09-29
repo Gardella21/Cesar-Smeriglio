@@ -1,3 +1,12 @@
+/* Header: transparente sobre la foto del hero mientras se está arriba */
+(function () {
+  var header = document.querySelector('.site-header');
+  if (!header) return;
+  function sync() { header.classList.toggle('is-top', window.pageYOffset < 24); }
+  window.addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
+
 (function () {
   'use strict';
 
@@ -75,18 +84,15 @@
 
   var header = document.querySelector('.site-header');
   var progress = document.querySelector('.progress');
-  var charlaImg = document.querySelector('.charla img');
-  var charla = document.querySelector('.charla');
 
   /* Aparición escalonada */
   var targets = [
-    '.hero__text > *', '.hero__visual', '.trust',
     '.problema__head > *', '.panel', '.destacada',
     '.servicios__head > *', '.bloque__label', '.card',
     '.como__head > *', '.step',
     '.foto', '.sobre__body > *',
     '.trayectoria__col > h3', '.trayectoria__col > p', '.timeline-list li', '.edu-list li',
-    '.charla', '.testi__head > *', '.testi',
+    '.testi__head > *', '.testi',
     '.cta__text > *', '.contact-card'
   ];
   var seen = [];
@@ -96,14 +102,14 @@
     seen.push(el);
     var parent = el.parentElement;
     parent.__n = (parent.__n || 0) + 1;
-    el.style.setProperty('--d', Math.min(parent.__n - 1, 4) * 0.08 + 's');
+    el.style.setProperty('--d', Math.min(parent.__n - 1, 4) * 0.12 + 's');
     el.classList.add('reveal');
     items.push(el);
   });
 
   function done(el) {
     // Al terminar la aparición se libera la clase para no pisar las transiciones de hover
-    var wait = 800 + parseFloat(el.style.getPropertyValue('--d')) * 1000;
+    var wait = 1100 + parseFloat(el.style.getPropertyValue('--d')) * 1000;
     setTimeout(function () { el.classList.remove('reveal'); }, wait);
   }
 
@@ -131,7 +137,7 @@
     if (t) t.classList.add('in');
   }
 
-  /* Progreso, sombra del header y parallax */
+  /* Progreso y sombra del header */
   var ticking = false;
   function update() {
     ticking = false;
@@ -139,13 +145,6 @@
     var max = root.scrollHeight - window.innerHeight;
     if (progress && max > 0) progress.style.transform = 'scaleX(' + Math.min(y / max, 1) + ')';
     if (header) header.classList.toggle('is-scrolled', y > 8);
-    if (charlaImg && charla) {
-      var r = charla.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) {
-        var offset = (r.top + r.height / 2 - window.innerHeight / 2) * -0.08;
-        charlaImg.style.setProperty('--py', Math.max(-22, Math.min(22, offset)) + 'px');
-      }
-    }
   }
   window.addEventListener('scroll', function () {
     if (!ticking) { ticking = true; requestAnimationFrame(update); }
@@ -154,20 +153,28 @@
   update();
 })();
 
-/* Scroll suave con inercia (más lento que el nativo). Solo con mouse y sin prefers-reduced-motion. */
+/* Scroll suave con inercia (más lento que el nativo) y asentado del contenido al centro.
+   Solo sin prefers-reduced-motion. La inercia solo con mouse; el asentado, con mouse y táctil. */
 (function () {
   'use strict';
 
   var root = document.documentElement;
   if (!root.classList.contains('js')) return;
-  if (!window.matchMedia('(pointer: fine)').matches) return;
+
+  var fine = window.matchMedia('(pointer: fine)').matches;
 
   var WHEEL_FACTOR = 0.55; // cuánto avanza cada giro de rueda respecto del nativo
   var EASE = 0.075;        // cuanto más chico, más lento y largo el deslizamiento
+  var SETTLE_DELAY = 220;  // ms sin mover el scroll antes de asentar
+  var EDGE_GAP = 40;       // aire (px) al alinear secciones más altas que la pantalla
 
+  var header = document.querySelector('.site-header');
   var current = window.pageYOffset;
   var target = current;
   var raf = 0;
+  var settleTimer = 0;
+  var touching = false;
+  var gestureStart = null; // posición donde empezó el gesto de scroll actual
 
   function maxScroll() {
     return Math.max(0, root.scrollHeight - window.innerHeight);
@@ -194,37 +201,122 @@
     target = clamp(y);
     if (!raf) raf = requestAnimationFrame(tick);
   }
+  function move(y) {
+    if (fine) go(y);
+    else window.scrollTo({ top: clamp(y), left: 0, behavior: 'smooth' });
+  }
 
-  window.addEventListener('wheel', function (e) {
-    if (e.ctrlKey || e.defaultPrevented) return;                 // zoom del navegador
-    if (document.body.style.overflow === 'hidden') return;       // menú abierto
-    var delta = e.deltaY;
-    if (e.deltaMode === 1) delta *= 16;
-    else if (e.deltaMode === 2) delta *= window.innerHeight;
-    e.preventDefault();
-    if (!raf) { current = window.pageYOffset; target = current; }
-    go(target + delta * WHEEL_FACTOR);
-  }, { passive: false });
+  /* Bloques que se centran dentro de secciones más altas que la pantalla */
+  var UNITS = {
+    servicios: '.bloque',
+    'sobre-cesar': '.sobre__grid, .trayectoria, .sobre__cierre'
+  };
 
-  // Si el scroll cambia por otro medio (teclado, barra, ancla nativa), se sincroniza
+  /* Puntos de asentado: cada bloque de contenido centrado; si un bloque es más alto que la pantalla,
+     se alinean sus bordes y entre ellos el scroll queda libre. */
+  function snapData() {
+    var vh = window.innerHeight;
+    var headerH = header ? header.offsetHeight : 0;
+    var avail = vh - headerH;
+    var pts = [0, maxScroll()];
+    var zones = [];
+
+    function addBlock(top, bottom) {
+      var h = bottom - top;
+      if (h <= avail - EDGE_GAP * 2) {
+        pts.push(top - headerH - (avail - h) / 2);
+      } else {
+        var lo = clamp(top - headerH - EDGE_GAP);
+        var hi = clamp(bottom - vh + EDGE_GAP);
+        pts.push(lo, hi);
+        if (hi > lo) zones.push([lo, hi]);
+      }
+    }
+
+    document.querySelectorAll('main > section[id]:not(#inicio)').forEach(function (sec) {
+      var cs = getComputedStyle(sec);
+      var r = sec.getBoundingClientRect();
+      var top = r.top + window.pageYOffset + parseFloat(cs.paddingTop);
+      var bottom = r.bottom + window.pageYOffset - parseFloat(cs.paddingBottom);
+      var units = UNITS[sec.id] ? sec.querySelectorAll(UNITS[sec.id]) : [];
+      if (!units.length) { addBlock(top, bottom); return; }
+      pts.push(top - headerH - EDGE_GAP);   // arranque de la sección, con su título
+      units.forEach(function (u) {
+        var ur = u.getBoundingClientRect();
+        addBlock(ur.top + window.pageYOffset, ur.bottom + window.pageYOffset);
+      });
+    });
+    return { pts: pts.map(clamp), zones: zones };
+  }
+
+  function settle() {
+    settleTimer = 0;
+    if (raf) { scheduleSettle(); return; }   // esperar a que termine el deslizamiento
+    var start = gestureStart;
+    gestureStart = null;
+    touching = false;
+    if (document.body.style.overflow === 'hidden') return;
+    var y = window.pageYOffset;
+    if (start === null) start = y;
+    var data = snapData();
+    for (var i = 0; i < data.zones.length; i++) {
+      if (y > data.zones[i][0] + 2 && y < data.zones[i][1] - 2) return;   // scroll libre dentro de la sección
+    }
+    var dir = y > start + 30 ? 1 : (y < start - 30 ? -1 : 0);
+    var best = null;
+    data.pts.forEach(function (p) {
+      if (dir !== 0 && (p - start) * dir <= 2) return;                    // solo puntos hacia donde se scrolleó
+      if (best === null || Math.abs(p - y) < Math.abs(best - y)) best = p;
+    });
+    if (best !== null && Math.abs(best - y) > 2) move(best);
+  }
+  function scheduleSettle() {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(settle, SETTLE_DELAY);
+  }
+
+  if (fine) {
+    window.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || e.defaultPrevented) return;                 // zoom del navegador
+      if (document.body.style.overflow === 'hidden') return;       // menú abierto
+      var delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 16;
+      else if (e.deltaMode === 2) delta *= window.innerHeight;
+      e.preventDefault();
+      if (gestureStart === null) gestureStart = raf ? target : window.pageYOffset;
+      if (!raf) { current = window.pageYOffset; target = current; }
+      go(target + delta * WHEEL_FACTOR);
+      scheduleSettle();
+    }, { passive: false });
+
+    // Anclas internas con el mismo deslizamiento lento
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      var id = a.getAttribute('href');
+      if (id.length < 2) return;
+      var el = document.getElementById(id.slice(1));
+      if (!el) return;
+      e.preventDefault();
+      var margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+      if (!raf) current = window.pageYOffset;
+      if (gestureStart === null) gestureStart = raf ? target : window.pageYOffset;
+      go(el.getBoundingClientRect().top + window.pageYOffset - margin);
+      history.pushState(null, '', id);
+      el.setAttribute('tabindex', '-1');
+      el.focus({ preventScroll: true });
+      scheduleSettle();
+    });
+  } else {
+    window.addEventListener('touchstart', function () {
+      touching = true;
+      if (gestureStart === null) gestureStart = window.pageYOffset;
+    }, { passive: true });
+  }
+
+  // Si el scroll cambia por otro medio (teclado, barra, ancla nativa), se sincroniza sin asentar
   window.addEventListener('scroll', function () {
     if (!raf) { current = window.pageYOffset; target = current; }
+    if (!fine && touching) scheduleSettle();
   }, { passive: true });
-
-  // Anclas internas con el mismo deslizamiento lento
-  document.addEventListener('click', function (e) {
-    var a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-    var id = a.getAttribute('href');
-    if (id.length < 2) return;
-    var el = document.getElementById(id.slice(1));
-    if (!el) return;
-    e.preventDefault();
-    var margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-    if (!raf) current = window.pageYOffset;
-    go(el.getBoundingClientRect().top + window.pageYOffset - margin);
-    history.pushState(null, '', id);
-    el.setAttribute('tabindex', '-1');
-    el.focus({ preventScroll: true });
-  });
 })();

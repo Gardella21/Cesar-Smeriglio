@@ -51,7 +51,7 @@
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
 <!-- ============ 7.1 HEADER (hermano anterior del hero, sticky) ============ -->
-<header class="site-header dk">
+<header class="site-header dk is-top">
   <div class="progress" aria-hidden="true"></div>
   <div class="container site-header__bar">
     <a class="brand" href="#inicio" aria-label="César Smeriglio, Coach Ontológico. Ir al inicio">
@@ -104,6 +104,11 @@
 
   <!-- ============ 7.2 HERO ============ -->
   <section class="hero dk" id="inicio" aria-labelledby="hero-titulo">
+    <!-- Foto de fondo: original de la web de César (charla en la FCE-UBA), recortada sin el cartel institucional. -->
+    <picture class="hero__bg" aria-hidden="true">
+      <source media="(max-width: 899px)" srcset="./img/hero-movil.webp" width="900" height="1381">
+      <img src="./img/hero.webp" alt="" width="2400" height="1412" fetchpriority="high">
+    </picture>
     <div class="container">
       <div class="hero__grid">
         <div class="hero__text">
@@ -342,12 +347,10 @@
       </div>
     </div>
 
-  <!-- ============ CARRUSEL DE TRAYECTORIA (dentro de Sobre César) ============ -->
+      <div class="sobre__cierre">
+<!-- ============ CARRUSEL DE TRAYECTORIA (dentro de Sobre César) ============ -->
   <!-- Nombres tomados de la web actual de César. Para usar logos oficiales hace falta su autorización: reemplazar cada <span class="wordmark"> por un <svg> o <img> con alt. -->
-  <div class="logos" role="group" aria-labelledby="logos-titulo">
-    <div class="container">
-      <p class="label logos__label" id="logos-titulo">Trayectoria en organizaciones como</p>
-    </div>
+  <div class="logos" role="group" aria-label="Organizaciones de la trayectoria de César">
     <div class="marquee">
       <ul class="marquee__track">
         <li><span class="wordmark">Google</span></li>
@@ -371,11 +374,7 @@
       </ul>
     </div>
   </div>
-
-
-    <figure class="container charla">
-      <img src="./img/charla.webp" width="1220" height="306" loading="lazy" alt="César Smeriglio hablando con un micrófono frente a una audiencia, junto a un cartel que dice Transformación">
-    </figure>
+    </div>
   </section>
 
   <!-- ============ 7.7 TESTIMONIOS ============ -->
