@@ -26,7 +26,7 @@ Sos un desarrollador front-end senior y diseñador orientado a conversión. Cons
 - **Despliegue:** Vercel, conectado a ese repositorio. Es un sitio estático: sin build. Configuración esperada en Vercel: preset "Other", sin comando de build y directorio de salida en la raíz del repo. No crees `vercel.json` ni `package.json` salvo que haga falta, y avisá si lo hacés.
 - **Ramas:** trabajá en una rama (por ejemplo `feat/landing-v1`), no directo sobre `main`. `main` es lo que Vercel publica como producción.
 - **Commits:** chicos, con mensaje en español y formato `tipo: descripción` (`feat`, `fix`, `style`, `docs`, `chore`).
-- **Commit y push a ramas `feat/*` sin preguntar**, una vez verificado el bloque de trabajo, y abrí el pull request hacia `main` con `gh pr create`. **Nunca** hagas push directo a `main`, merge ni deploy: `main` lo acepto yo desde el PR. Tampoco cambies la configuración de Vercel ni de GitHub.
+- **No hagas commit ni push hasta que yo lo pida** ("commitea y pushea"): primero mostrame los cambios en localhost. Cuando lo pida, el push va **directo a `main`**, sin pull request. Tampoco cambies la configuración de Vercel ni de GitHub.
 - **Qué NO se sube al repo:** capturas de verificación, archivos temporales, credenciales ni tokens. Las capturas y las herramientas de verificación van en una carpeta temporal fuera del repo. Si hace falta, podés crear un `.gitignore` mínimo (`.DS_Store`, `node_modules/`, `.vercel/`).
 - **Qué SÍ se versiona:** `index.html`, `styles.css`, `script.js` y la carpeta `/diseno/` con los PNG de referencia (ver Parte B, sección 1).
 - **Modo demo (mientras César no haya aceptado la propuesta):**

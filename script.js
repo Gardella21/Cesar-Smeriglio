@@ -153,3 +153,78 @@
   window.addEventListener('resize', update);
   update();
 })();
+
+/* Scroll suave con inercia (más lento que el nativo). Solo con mouse y sin prefers-reduced-motion. */
+(function () {
+  'use strict';
+
+  var root = document.documentElement;
+  if (!root.classList.contains('js')) return;
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+
+  var WHEEL_FACTOR = 0.55; // cuánto avanza cada giro de rueda respecto del nativo
+  var EASE = 0.075;        // cuanto más chico, más lento y largo el deslizamiento
+
+  var current = window.pageYOffset;
+  var target = current;
+  var raf = 0;
+
+  function maxScroll() {
+    return Math.max(0, root.scrollHeight - window.innerHeight);
+  }
+  function clamp(v) {
+    return Math.max(0, Math.min(maxScroll(), v));
+  }
+  function jump(y) {
+    window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+  }
+  function tick() {
+    var diff = target - current;
+    if (Math.abs(diff) < 0.4) {
+      current = target;
+      jump(current);
+      raf = 0;
+      return;
+    }
+    current += diff * EASE;
+    jump(current);
+    raf = requestAnimationFrame(tick);
+  }
+  function go(y) {
+    target = clamp(y);
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('wheel', function (e) {
+    if (e.ctrlKey || e.defaultPrevented) return;                 // zoom del navegador
+    if (document.body.style.overflow === 'hidden') return;       // menú abierto
+    var delta = e.deltaY;
+    if (e.deltaMode === 1) delta *= 16;
+    else if (e.deltaMode === 2) delta *= window.innerHeight;
+    e.preventDefault();
+    if (!raf) { current = window.pageYOffset; target = current; }
+    go(target + delta * WHEEL_FACTOR);
+  }, { passive: false });
+
+  // Si el scroll cambia por otro medio (teclado, barra, ancla nativa), se sincroniza
+  window.addEventListener('scroll', function () {
+    if (!raf) { current = window.pageYOffset; target = current; }
+  }, { passive: true });
+
+  // Anclas internas con el mismo deslizamiento lento
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var id = a.getAttribute('href');
+    if (id.length < 2) return;
+    var el = document.getElementById(id.slice(1));
+    if (!el) return;
+    e.preventDefault();
+    var margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    if (!raf) current = window.pageYOffset;
+    go(el.getBoundingClientRect().top + window.pageYOffset - margin);
+    history.pushState(null, '', id);
+    el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
+  });
+})();
