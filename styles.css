@@ -356,6 +356,8 @@ section[id] { scroll-margin-top: var(--header-h); }
 
 /* --- Franja de trayectoria (carrusel) --- */
 .logos { margin-top: 64px; overflow: hidden; }
+.logos__intro { max-width: 720px; margin: 0 auto 24px; text-align: center; font-size: 17px; line-height: 27px; color: var(--slate); }
+.logos__title { margin: 0 0 32px; text-align: center; font-family: var(--font-serif); font-weight: 600; font-size: 28px; line-height: 34px; color: var(--primary); }
 .marquee {
   display: flex;
   overflow: hidden;
@@ -592,10 +594,13 @@ section[id] { scroll-margin-top: var(--header-h); }
   gap: 24px;
   min-height: 232px;
   padding: 24px;
-  border: 1.5px dashed var(--hairline-strong);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   background: var(--bg);
+  box-shadow: var(--shadow-rest, 0 1px 2px rgba(11,31,38,.06));
 }
+.testi blockquote p { font-size: 15px; line-height: 24px; color: var(--ink); }
+.testi strong { font-weight: 600; font-size: 16px; line-height: 22px; color: var(--primary); }
 .testi blockquote { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .bar { display: block; height: 10px; border-radius: 2px; background: rgba(14, 59, 74, .1); width: 100%; }
 .bar--m { width: 86%; }
